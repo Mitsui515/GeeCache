@@ -19,6 +19,7 @@ geecache/
     |--byteview.go // 缓存值的抽象与封装
     |--cache.go    // 并发控制
     |--geecache.go // 负责与外部交互，控制缓存存储和获取的主流程
+	|--http.go     // 提供被其他节点访问的能力(基于http)
 ```
 
 ## Day 1 LRU缓存淘汰策略
@@ -131,3 +132,24 @@ Group 是 GeeCache 最核心的数据结构，负责与用户的交互，并且�
 - Get 方法实现了上述所说的流程 ⑴ 和 ⑶。
 - 流程 ⑴ ：从 mainCache 中查找缓存，如果存在则返回缓存值。
 - 流程 ⑶ ：缓存不存在，则调用 load 方法，load 调用 getLocally（分布式场景下会调用 getFromPeer 从其他节点获取），getLocally 调用用户回调函数 `g.getter.Get()` 获取源数据，并且将源数据添加到缓存 mainCache 中（通过 populateCache 方法）
+
+## Day 3 HTTP 服务端
+
+- 介绍如何使用 Go 语言标准库 `http` 搭建 HTTP Server
+- 并实现 main 函数启动 HTTP Server 测试 API，**代码约60行**
+
+### GeeCache HTTP 服务端
+
+分布式缓存需要实现节点间通信，建立基于 HTTP 的通信机制是比较常见和简单的做法。如果一个节点启动了 HTTP 服务，那么这个节点就可以被其他节点访问。今天我们就为单机节点搭建 HTTP Server。
+
+首先我们创建一个结构体 `HTTPPool`，作为承载节点间 HTTP 通信的核心数据结构（包括服务端和客户端，今天只实现服务端）。
+
+``http.go``
+
+- `HTTPPool` 只有 2 个参数，一个是 self，用来记录自己的地址，包括主机名/IP 和端口。
+- 另一个是 basePath，作为节点间通讯地址的前缀，默认是 `/_geecache/`，那么 http://example.com/_geecache/ 开头的请求，就用于节点间的访问。因为一个主机上还可能承载其他的服务，加一段 Path 是一个好习惯。比如，大部分网站的 API 接口，一般以 `/api` 作为前缀。
+
+- ServeHTTP 的实现逻辑是比较简单的，首先判断访问路径的前缀是否是 `basePath`，不是返回错误。
+- 我们约定访问路径格式为 `/<basepath>/<groupname>/<key>`，通过 groupname 得到 group 实例，再使用 `group.Get(key)` 获取缓存数据。
+- 最终使用 `w.Write()` 将缓存值作为 httpResponse 的 body 返回。
+
