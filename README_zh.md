@@ -8,7 +8,6 @@
 - 使用 Go 锁机制防止缓存击穿
 - 使用一致性哈希选择节点，实现负载均衡
 - 使用 protobuf 优化节点间二进制通信
-- …
 
 ## 代码结构
 
@@ -393,3 +392,16 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go
 - `ServeHTTP()` 中使用 `proto.Marshal()` 编码 HTTP 响应。
 - `Get()` 中使用 `proto.Unmarshal()` 解码 HTTP 响应。
 
+## 优点
+
+- GeeCache 使用 Go 语言编写，具有高并发和高性能的特点。
+- GeeCache 使用 LRU 算法实现了缓存淘汰策略，保证了缓存的空间效率。
+- GeeCache 使用一致性哈希算法实现了节点选择，保证了缓存的负载均衡。
+- GeeCache 使用 protobuf 实现了节点间的二进制通信，提高了传输的效率和兼容性。
+- GeeCache 使用 singleflight 实现了防止缓存击穿的机制，避免了缓存失效时的并发风险。
+
+## 缺点
+
+- GeeCache 没有实现缓存的过期时间，可能导致缓存的数据不一致或过时。
+- GeeCache 没有实现缓存的持久化，如果所有的节点都宕机，缓存的数据将丢失。
+- GeeCache 没有实现缓存的监控和统计，无法了解缓存的运行状况和性能指标。
