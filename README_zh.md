@@ -350,3 +350,46 @@ Group 是 GeeCache 最核心的数据结构，负责与用户的交互，并且�
 - 为什么要使用 protobuf？
 - 使用 protobuf 进行节点间通信，编码报文，提高效率。**代码约50行**
 
+### 为什么要使用protobuf
+
+> protobuf 即 Protocol Buffers，Google 开发的一种数据描述语言，是一种轻便高效的结构化数据存储格式，与语言、平台无关，可扩展可序列化。protobuf 以二进制方式存储，占用空间小。
+
+**protobuf** 广泛地应用于远程过程调用(RPC) 的二进制传输，使用 protobuf 的目的非常简单，为了**获得更高的性能**。传输前使用 protobuf 编码，接收方再进行解码，可以显著地降低二进制传输的大小。另外一方面，protobuf 可非常**适合传输结构化数据，便于通信字段的扩展**。
+
+使用 protobuf 一般分为以下 2 步：
+
+- 按照 protobuf 的语法，在 `.proto` 文件中定义数据结构，并使用 `protoc` 生成 Go 代码（`.proto` 文件是跨平台的，还可以生成 C、Java 等其他源码文件）。
+- 在项目代码中引用生成的 Go 代码。
+
+### 使用protobuf通信
+
+`geecachepb.proto`
+
+- `Request` 包含 2 个字段， group 和 cache，这与我们之前定义的接口 `/_geecache/<group>/<name>` 所需的参数吻合。
+- `Response` 包含 1 个字段，bytes，类型为 byte 数组，与之前吻合。
+
+```shell
+protoc --go_out=. *.proto
+```
+
+踩坑：使用`go get -u github.com/golang/protobuf/protoc-gen-go`安装protoc-gen-go报错
+
+```shell
+go: module github.com/golang/protobuf is deprecated: Use the "google.golang.org/protobuf" module instead
+```
+
+需要使用命令
+
+```shell
+go install google.golang.org/protobuf/cmd/protoc-gen-go
+```
+
+且在proto文件中加入`option go_package = "./";`。
+
+修改 `peers.go` 中的 `PeerGetter` 接口，参数使用 `geecachepb.pb.go` 中的数据类型。
+
+修改 `geecache.go` 和 `http.go` 中使用了 `PeerGetter` 接口的地方。
+
+- `ServeHTTP()` 中使用 `proto.Marshal()` 编码 HTTP 响应。
+- `Get()` 中使用 `proto.Unmarshal()` 解码 HTTP 响应。
+
