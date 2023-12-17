@@ -108,7 +108,7 @@ To use distributed cache, you need to create an `HTTPPool`, which is the core co
 ```go
 import (
 	"fmt"
-	"github.com/geektutu/geecache"
+	"github.com/Mitsui515/GeeCache/geecache"
 	"log"
 	"net/http"
 )
