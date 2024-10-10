@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultBasePath = "/_geecache/"
-	defaultReplicas = 50
+	// defaultReplicas = 50
 )
 
 // HTTPPool implements PeerPicker for a pool of HTTP peers.
