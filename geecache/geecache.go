@@ -146,9 +146,8 @@ func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
 }
 
 func (g *Group) updateKeyStats(key string, value ByteView) {
-	mu.Lock()
-	defer mu.Unlock()
-
+	// mu.Lock()
+	// defer mu.Unlock()
 	// 更新键的访问统计信息
 	if stat, ok := g.keys[key]; ok {
 		stat.remoteCnt.Add(1)
@@ -157,7 +156,9 @@ func (g *Group) updateKeyStats(key string, value ByteView) {
 		// 如果 QPS 超过阈值，将数据添加到热点缓存
 		if qps >= defaultMaxMinuteRemoteQPS {
 			g.populateHotCache(key, value)
+			mu.Lock()
 			delete(g.keys, key)
+			mu.Unlock()
 		}
 	} else {
 		// 首次访问，初始化统计信息
